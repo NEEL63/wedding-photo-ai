@@ -1,15 +1,15 @@
 
 from flask import Flask, request, render_template, send_from_directory, redirect, url_for
 import os
-import pickle
-import face_recognition
-from werkzeug.utils import secure_filename
-from PIL import Image
 import shutil
+import pickle
+from werkzeug.utils import secure_filename
+from deepface import DeepFace
+from PIL import Image
+import numpy as np
 
 app = Flask(__name__)
 
-# === CONFIGURATION ===
 UPLOAD_FOLDER = 'event_photos'
 GUEST_FOLDER = 'guest_photos'
 MATCHED_FOLDER = 'matched_photos'
@@ -19,7 +19,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 for folder in [UPLOAD_FOLDER, GUEST_FOLDER, MATCHED_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
-# === UTILS ===
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -33,7 +32,6 @@ def save_guest_data(data):
     with open(GUEST_DATA, 'wb') as f:
         pickle.dump(data, f)
 
-# === ROUTES ===
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -47,13 +45,8 @@ def upload_selfie():
         filepath = os.path.join(GUEST_FOLDER, filename)
         file.save(filepath)
 
-        image = face_recognition.load_image_file(filepath)
-        encodings = face_recognition.face_encodings(image)
-        if not encodings:
-            return "No face detected in selfie.", 400
-
         guest_data = load_guest_data()
-        guest_data[name] = encodings[0]
+        guest_data[name] = filepath
         save_guest_data(guest_data)
 
         return redirect(url_for('home'))
@@ -71,22 +64,23 @@ def upload_event():
 @app.route('/match_faces')
 def match_faces():
     guest_data = load_guest_data()
-    shutil.rmtree(MATCHED_FOLDER)
+    shutil.rmtree(MATCHED_FOLDER, ignore_errors=True)
     os.makedirs(MATCHED_FOLDER, exist_ok=True)
 
-    for img_file in os.listdir(UPLOAD_FOLDER):
-        img_path = os.path.join(UPLOAD_FOLDER, img_file)
-        image = face_recognition.load_image_file(img_path)
-        locations = face_recognition.face_locations(image)
-        encodings = face_recognition.face_encodings(image, locations)
+    for photo_name in os.listdir(UPLOAD_FOLDER):
+        photo_path = os.path.join(UPLOAD_FOLDER, photo_name)
 
-        for name, guest_encoding in guest_data.items():
-            matches = face_recognition.compare_faces(encodings, guest_encoding, tolerance=0.5)
-            if any(matches):
-                guest_folder = os.path.join(MATCHED_FOLDER, name)
-                os.makedirs(guest_folder, exist_ok=True)
-                shutil.copy(img_path, os.path.join(guest_folder, img_file))
-    return "Matching complete."
+        for guest_name, guest_photo_path in guest_data.items():
+            try:
+                result = DeepFace.verify(img1_path=guest_photo_path, img2_path=photo_path, enforce_detection=False)
+                if result['verified']:
+                    guest_folder = os.path.join(MATCHED_FOLDER, guest_name)
+                    os.makedirs(guest_folder, exist_ok=True)
+                    shutil.copy(photo_path, os.path.join(guest_folder, photo_name))
+            except Exception as e:
+                continue
+
+    return "Face matching complete."
 
 @app.route('/view_album/<guest_name>')
 def view_album(guest_name):
