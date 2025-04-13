@@ -67,6 +67,8 @@ def match_faces():
     shutil.rmtree(MATCHED_FOLDER, ignore_errors=True)
     os.makedirs(MATCHED_FOLDER, exist_ok=True)
 
+    logs = []
+
     for photo_name in os.listdir(UPLOAD_FOLDER):
         photo_path = os.path.join(UPLOAD_FOLDER, photo_name)
 
@@ -77,10 +79,16 @@ def match_faces():
                     guest_folder = os.path.join(MATCHED_FOLDER, guest_name)
                     os.makedirs(guest_folder, exist_ok=True)
                     shutil.copy(photo_path, os.path.join(guest_folder, photo_name))
+                    logs.append(f"Matched: {guest_name} <-> {photo_name}")
             except Exception as e:
-                continue
+                logs.append(f"Error matching {guest_name} and {photo_name}: {str(e)}")
+
+    print("MATCHING LOG:")
+    for log in logs:
+        print(log)
 
     return "Face matching complete."
+
 
 @app.route('/view_album/<guest_name>')
 def view_album(guest_name):
