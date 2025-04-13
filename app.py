@@ -95,4 +95,5 @@ def matched_photos(guest, filename):
     return send_from_directory(os.path.join(MATCHED_FOLDER, guest), filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False, host='0.0.0.0', port=10000)
+
