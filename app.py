@@ -74,7 +74,16 @@ def match_faces():
 
         for guest_name, guest_photo_path in guest_data.items():
             try:
-                result = DeepFace.verify(img1_path=guest_photo_path, img2_path=photo_path, enforce_detection=False)
+                result = DeepFace.verify(
+                    img1_path=guest_photo_path,
+                    img2_path=photo_path,
+                    enforce_detection=False,
+                    detector_backend='opencv',  # Use lightweight detector
+                    model_name='VGG-Face',
+                    prog_bar=False,
+                    distance_metric='cosine'
+                )
+
                 if result['verified']:
                     guest_folder = os.path.join(MATCHED_FOLDER, guest_name)
                     os.makedirs(guest_folder, exist_ok=True)
@@ -83,11 +92,11 @@ def match_faces():
             except Exception as e:
                 logs.append(f"Error matching {guest_name} and {photo_name}: {str(e)}")
 
-    print("MATCHING LOG:")
+    print(\"MATCHING LOG:\")
     for log in logs:
         print(log)
 
-    return "Face matching complete."
+    return \"Face matching complete.\"
 
 
 @app.route('/view_album/<guest_name>')
