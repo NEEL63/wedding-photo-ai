@@ -98,7 +98,7 @@ def match_faces():
                 print(f"❌ Error comparing {guest_name} and {photo_name}: {str(e)}")
 
     print("✅ Matching complete.")
-    return "Face
+    return "Face"
 
 @app.route('/view_album/<guest_name>')
 def view_album(guest_name):
