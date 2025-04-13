@@ -67,37 +67,38 @@ def match_faces():
     shutil.rmtree(MATCHED_FOLDER, ignore_errors=True)
     os.makedirs(MATCHED_FOLDER, exist_ok=True)
 
-    logs = []
+    print("🔍 Starting face matching...")
 
     for photo_name in os.listdir(UPLOAD_FOLDER):
         photo_path = os.path.join(UPLOAD_FOLDER, photo_name)
+        print(f"📸 Checking event photo: {photo_name}")
 
         for guest_name, guest_photo_path in guest_data.items():
+            print(f"👤 Comparing with guest: {guest_name}")
             try:
                 result = DeepFace.verify(
                     img1_path=guest_photo_path,
                     img2_path=photo_path,
                     enforce_detection=False,
-                    detector_backend='opencv',  # Use lightweight detector
+                    detector_backend='opencv',
                     model_name='VGG-Face',
                     prog_bar=False,
                     distance_metric='cosine'
                 )
 
-                if result['verified']:
+                print(f"📏 Distance {guest_name} vs {photo_name}: {result['distance']}")
+
+                if result['distance'] < 0.40:
                     guest_folder = os.path.join(MATCHED_FOLDER, guest_name)
                     os.makedirs(guest_folder, exist_ok=True)
                     shutil.copy(photo_path, os.path.join(guest_folder, photo_name))
-                    logs.append(f"Matched: {guest_name} <-> {photo_name}")
+                    print(f"✅ MATCHED: {guest_name} <-> {photo_name}")
+
             except Exception as e:
-                logs.append(f"Error matching {guest_name} and {photo_name}: {str(e)}")
+                print(f"❌ Error comparing {guest_name} and {photo_name}: {str(e)}")
 
-    print(\"MATCHING LOG:\")
-    for log in logs:
-        print(log)
-
-    return \"Face matching complete.\"
-
+    print("✅ Matching complete.")
+    return "Face
 
 @app.route('/view_album/<guest_name>')
 def view_album(guest_name):
