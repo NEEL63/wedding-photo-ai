@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head><title>{{ guest }}'s Album</title></head>
+<body>
+  <h2>Photos for {{ guest }}</h2>
+  {% for file in files %}
+    <div>
+      <img src="/matched_photos/{{ guest }}/{{ file }}" width="300">
+    </div>
+  {% endfor %}
+</body>
+</html>
